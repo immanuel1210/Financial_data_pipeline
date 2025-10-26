@@ -12,7 +12,7 @@ The project uses:
 - 🧩 **Python** — for data extraction and transformation  
 - 🌐 **ExchangeRate Host API** — as the data source  
 - 🧮 **Pandas** — for data wrangling  
-- 🗄️ **MySQL** — as the data warehouse  
+- 🗄️ **MySQL and BigQuery** — as the data warehouse  
 
 ---
 
@@ -46,13 +46,41 @@ def transform_rate(data):
 ```
 
 ### 3️⃣ Load
-Store the transformed dataset into a MySQL database for long-term storage and analysis.
+Store the transformed dataset into a MySQL or BigQuery database for long-term storage and analysis.
 
+- MySQL
 ```python
 def load_to_mysql(df):
     engine = create_engine("mysql+pymysql://root:root@localhost:3306/currency")
     df.to_sql("exchange_rate", con=engine, if_exists="append", index=False)
     print("✅ Data successfully loaded into MySQL!")
+```
+
+- BigQuery
+```python
+def load_to_bigquery(df,table_name):
+    client = bigquery.Client()
+    
+    #Define the name of the project, dataset, and table
+    project_id = "exchange-rate-pipeline-476115"
+    dataset_id = "currency_data"
+    table_id = table_name
+    
+    table_ref = f"{project_id}.{dataset_id}.{table_id}"
+    try: 
+        job_config = bigquery.LoadJobConfig(
+            write_disposition = bigquery.WriteDisposition.WRITE_TRUNCATE,
+        )
+
+        #Load the dataframe to bigquery's table
+        job = client.load_table_from_dataframe(df, table_ref, job_config = job_config)
+        job.result()
+
+        table = client.get_table(table_ref)
+        print("Data berhasil dimuat")
+    
+    except Exception as e:
+        print("Data gagal dimuat",e)
 ```
 
 ## ⚙️ Tools
@@ -61,7 +89,7 @@ def load_to_mysql(df):
 | ----------------------- | --------------------- |
 | Programming             | Python 3, Pandas      |
 | Data Source             | ExchangeRate Host API |
-| Database                | MySQL                 |
+| Database                | MySQL and BigQuery    |
 | Version Control         | Git & GitHub          |
 
 
